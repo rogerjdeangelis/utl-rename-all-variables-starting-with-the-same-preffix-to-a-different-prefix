@@ -8,7 +8,7 @@ Rename all variables starting with the same preffix to a different prefix
 
          to
 
-           md_joannne   md_janey   md_joanne   md_jane
+           md_joannne   md_janey   md_joan     md_jane
 
      respectively
 
