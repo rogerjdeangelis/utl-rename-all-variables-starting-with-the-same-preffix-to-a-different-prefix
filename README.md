@@ -11,8 +11,7 @@
 
          respectively
 
-    * Richard DeVenezia's has a solution that handles unlimited number of renames?  Bart's second solution was
-      not tested on 2,000 variables? I ran out of time to test?
+    * Richard DeVenezia's and Bart's second solution handle over 17,000 renames(probably more)
       Some solutions fail at 2,000(average 13 byte length col names) and freezes interactive SAS.
       But it can handle 1,000 variables of average length 12
       I do question 1,000 non array elements.  Variables that do not have names like x1-x2000.
@@ -116,7 +115,7 @@
             Paige Miller
             https://communities.sas.com/t5/user/viewprofilepage/user-id/10892
 
-         d. Bart2 transpose (untested on 2000 variables)
+         d. Bart2 transpose (tested on 20,000 renames)
               Bartosz Jablonski
               yabwon@gmail.com
 
