@@ -1,16 +1,104 @@
-Rename all variables starting with the same preffix to a different prefix
+Rename all variables starting with the same preffix to a different prefix;
 
-Problem: Rename variables (suppose you have 1,000 variables)
+Crowd Source solution on SAS-L by Roger, Bart and Richard.
+
+Problem: Rename variables (some solutuion limit the number of variables - Richard's does not)
 
        dr_joanne    dr_janey   dr_joan    dr_jane
-
      to
-
        md_joannne   md_janey   md_joanne   md_jane
 
- respectively
+     respectively
 
-  Method
+* Richard DeVenezia's has a solution that handles unlimited number of renames?  Bart's second solution was
+  not tested on 2,000 variables? I ran out of time to test?
+  Some solutions fail at 2,000(average 13 byte length col names) and freezes interactive SAS.
+  But it can handle 1,000 variables of average length 12
+  I do question 1,000 non array elements.  Variables that do not have names like x1-x2000.
+
+
+github (updating)
+https://tinyurl.com/r2mgorw
+https://github.com/rogerjdeangelis/utl-rename-all-variables-starting-with-the-same-preffix-to-a-different-prefix
+Barts macros
+https://github.com/yabwon/SAS_PACKAGES
+
+see github
+https://github.com/rogerjdeangelis/utl_rename_variables_using_coordinated_lists_renamel_macro
+https://tinyurl.com/v2fr64y
+https://github.com/rogerjdeangelis?utf8=%E2%9C%93&tab=repositories&q=rename+in%3Aname&type=&language=
+
+SAS Forum
+https://tinyurl.com/sfphgls
+https://communities.sas.com/t5/SAS-Programming/Rename-all-variables-starting-with-the-same-preffix-to-a/m-p/611152
+
+
+macros (I have original and Barts array/do_over macros ie array/do_over barray/bdoover)
+       (get the latest and best array and do_over from https://github.com/yabwon/SAS_PACKAGES)
+https://tinyurl.com/y9nfugth
+https://github.com/rogerjdeangelis/utl-macros-used-in-many-of-rogerjdeangelis-repositories
+
+*                                         _
+  ___ ___  _ __ ___  _ __ ___   ___ _ __ | |_ ___
+ / __/ _ \| '_ ` _ \| '_ ` _ \ / _ \ '_ \| __/ __|
+| (_| (_) | | | | | | | | | | |  __/ | | | |_\__ \
+ \___\___/|_| |_| |_|_| |_| |_|\___|_| |_|\__|___/
+
+;
+   It is worth noting that this does NOT work
+
+   1. data have;
+        array nams[2000] x1-x2000 (2000*9);
+      run;quit;
+
+      proc datasets library=work nolist;
+          modify have ;
+          rename x1-x2000=y1-y2000;
+      quit;
+
+      32           rename x1-x2000 = y1-y2000;
+                            -
+      ERROR 73-322: Expecting an =.
+
+
+   2. This does work but requires a full table scan
+
+      data have(rename=(x1-x2000=y1-y2000));
+        array nams[2000] x1-x2000 (2000*9);
+      run;quit;
+
+   3. Original soluton (a) does work for 1,000 (13 byte col names), but not 2,000.
+
+      %utlnopts; * turn off all but warnings and errors;
+      data have;
+         array nams[1000] l_abcdefeg1-l_abcdefeg1000 (1000*9);
+      run;quit;
+
+      %let vars=%utl_varlist(have,qstyle=DOUBLE,prx=/^l_/i);
+
+      %barray(v[1:%sysfunc(countc(&vars,_))] $32 (&vars),function=substr(v[_i_],3))
+
+      proc datasets lib=work;
+        modify have;
+        rename
+          %do_over(v,phrase=%str(L_? = MD?))
+        ;
+      run;quit;
+
+*          _       _   _
+ ___  ___ | |_   _| |_(_) ___  _ __  ___
+/ __|/ _ \| | | | | __| |/ _ \| '_ \/ __|
+\__ \ (_) | | |_| | |_| | (_) | | | \__ \
+|___/\___/|_|\__,_|\__|_|\___/|_| |_|___/
+
+;
+
+     a.  Preferred solution (shoown with 17,576 renames)
+         Macro solution  no limit to the number of renames
+         Richard DeVenezia
+         rdevenezia@gmail.com
+
+     b. Bartosz Jablonski bdarray (uses dosubl). Limited to about 1,000 variables
 
        1. Use utl_varlist to select just the variables with the desired pefix
 
@@ -22,6 +110,15 @@ Problem: Rename variables (suppose you have 1,000 variables)
           This is a powerfull macro built with 'DOSUBL'
 
        3. Use do_over and proc datasets to reanme old prtefix to new prefix
+
+     c. Proc sql (very slow and not fioolproof renames DR_DR_DR to MD_MD_MD instead of MD_DR_DR?).
+        Paige Miller
+        https://communities.sas.com/t5/user/viewprofilepage/user-id/10892
+
+     d. Bart2 transpose (untested on 2000 variables)
+          Bartosz Jablonski
+          yabwon@gmail.com
+
 
 github
 https://tinyurl.com/r2mgorw
@@ -41,8 +138,6 @@ https://communities.sas.com/t5/SAS-Programming/Rename-all-variables-starting-wit
 macros
 https://tinyurl.com/y9nfugth
 https://github.com/rogerjdeangelis/utl-macros-used-in-many-of-rogerjdeangelis-repositories
-
-
 
 *_                   _
 (_)_ __  _ __  _   _| |_
@@ -82,7 +177,85 @@ WORK.HAVE total obs=1
 | |_) | | | (_) | (_|  __/\__ \__ \
 | .__/|_|  \___/ \___\___||___/___/
 |_|
+           ____  _      _                   _
+  __ _    |  _ \(_) ___| |__   __ _ _ __ __| |
+ / _` |   | |_) | |/ __| '_ \ / _` | '__/ _` |
+| (_| |_  |  _ <| | (__| | | | (_| | | | (_| |
+ \__,_(_) |_| \_\_|\___|_| |_|\__,_|_|  \__,_|
+
 ;
+
+%utlnopts;
+
+%macro many_drs;
+  %local p q r;
+  %do p = 65 %to 90; %do q = 65 %to 90; %do r = 65 %to 90;
+    dr_%sysfunc(byte(&p))%sysfunc(byte(&q))%sysfunc(byte(&r))
+  %end; %end; %end;
+%mend;
+
+data have;
+  array many %many_drs (17576*9);
+run;
+
+WORK.HAVE (17,576 variables)
+
+ -- NUMERIC --
+DR_AAA                           N8       9
+DR_AAB                           N8       9
+DR_AAC                           N8       9
+...
+DR_ZZX                           N8       9
+DR_ZZY                           N8       9
+DR_ZZZ                           N8       9
+
+
+%macro rename_vars(lib=, mem=, pattern=);
+  %local dsid index name newname count;
+  %let dsid = %sysfunc(open(&lib..&mem));
+  %let count = 0;
+  %if &dsid %then %do;
+    %do index = 1 %to %sysfunc(attrn(&dsid,nvar));
+      %let name = %sysfunc(varname(&dsid,&index));
+      %let newname = %sysfunc(prxchange(&pattern,1,&name));
+      %if &name ne &newname %then %do;
+        %let count = %eval(&count+1);
+        %local rename&count;
+        %let rename&count = &name=&newname;
+      %end;
+    %end;
+    %let dsid = %sysfunc(close(&dsid));
+  %end;
+  %else
+    %put NOTE: %sysfunc(sysmsg());
+  %if &count %then %do;
+    modify have;
+    rename
+      %do index = 1 %to &count;
+        &&rename&index
+      %end;
+    ;
+  %end;
+%mend;
+
+proc datasets noprint lib=work;
+  %rename_vars(lib=work, mem=have, pattern=s/dr(.+)/md$1/);
+run;
+quit;
+
+%utlopts;
+
+*_        ____             _
+| |__    | __ )  __ _ _ __| |_
+| '_ \   |  _ \ / _` | '__| __|
+| |_) |  | |_) | (_| | |  | |_
+|_.__(_) |____/ \__,_|_|   \__|
+
+;
+
+data have;
+   retain dr_joanne dr_janey dr_joan dr_jane "doctors";
+run;quit;
 
 %let vars=%utl_varlist(have,qstyle=DOUBLE,prx=/^dr/i);
 
@@ -119,5 +292,132 @@ NOTE: MODIFY was successful for WORK.HAVE.DATA.
 
 NOTE: PROCEDURE DATASETS used (Total process time):
       real time           0.16 seconds
+
+
+*         ____       _
+  ___    |  _ \ __ _(_) __ _  ___
+ / __|   | |_) / _` | |/ _` |/ _ \
+| (__ _  |  __/ (_| | | (_| |  __/
+ \___(_) |_|   \__,_|_|\__, |\___|
+                       |___/
+;
+
+* can be slow on EG server;
+
+data have;
+   retain dr_joanne dr_janey dr_joan dr_jane dr_dr_dR "doctors";
+run;quit;
+
+* this may not be foolproff if variable has name like
+proc sql noprint;
+   select cats(name,'=',tranwrd(upcase(name),'DR','MD')) into :renames separated by " "
+   from dictionary.columns
+   where libname="WORK"
+     and memname="HAVE"
+     and upcase(name) eqt "DR"
+   ;
+quit;
+
+%put &=renames;
+
+proc datasets library=work nolist;
+    modify have;
+    rename &renames;
+quit;
+
+
+
+data have;
+   retain dr_joanne dr_janey dr_joan dr_jane "doctors"
+          prof_joanne prof_janey prof_joan prof_jane "profesors"
+    ;
+run;quit;
+
+proc transpose data = have out = have2(keep=_name_ where = (_name_ =: 'dr_'));
+var _all_;
+run;
+
+data have3 / view=have3;
+set have2;
+_name_=scan(_name_, -1, '_');
+run;
+
+/* https://github.com/yabwon/SAS_PACKAGES */
+/* %helpPackage(macroArray,array())       */
+/* %helpPackage(macroArray,do_over())     */
+
+%array(ds=have3, vars=_name_|names, macarray=Y)
+%put _user_;
+
+proc datasets lib=work;
+modify have;
+rename
+  %do_over(names, phrase = %nrstr(
+    dr_%names(&_I_.) = mr_%names(&_I_.)
+    ))
+;
+run;
+quit;
+
+*    _     ____             _   ____
+  __| |   | __ )  __ _ _ __| |_|___ \
+ / _` |   |  _ \ / _` | '__| __| __) |
+| (_| |_  | |_) | (_| | |  | |_ / __/
+ \__,_(_) |____/ \__,_|_|   \__|_____|
+
+;
+
+options validvarname=upcase;
+data have;
+   retain dr_joanne dr_janey dr_joan dr_jane "doctors"
+          prof_joanne prof_janey prof_joan prof_jane "profesors"
+    ;
+run;quit;
+
+proc transpose data = have out = havXpo(keep=_name_ where = (_name_ =: 'DR_'));
+var _all_;
+run;
+
+/*
+WORK.HAVXPO total obs=4
+
+bs     _NAME_
+
+1     DR_JOANNE
+2     DR_JANEY
+3     DR_JOAN
+4     DR_JANE
+*/
+
+data havCut / view=havCut;
+set havXpo;
+_name_=scan(_name_, -1, '_');
+run;
+
+/* https://github.com/yabwon/SAS_PACKAGES */
+/* %helpPackage(macroArray,array())       */
+/* %helpPackage(macroArray,do_over())     */
+
+%barray(ds=havCut, vars=_name_|names, macarray=Y)
+%put _user_;
+
+proc datasets lib=work;
+modify have;
+rename
+  %bdo_over(names, phrase = %nrstr(
+    dr_%names(&_I_.) = mr_%names(&_I_.)
+    ))
+;
+run;
+quit;
+
+381   ;
+NOTE: Renaming variable DR_JANE to MR_JANE.
+NOTE: Renaming variable DR_JOAN to MR_JOAN.
+NOTE: Renaming variable DR_JANEY to MR_JANEY.
+NOTE: Renaming variable DR_JOANNE to MR_JOANNE.
+382   run;
+
+
 
 
