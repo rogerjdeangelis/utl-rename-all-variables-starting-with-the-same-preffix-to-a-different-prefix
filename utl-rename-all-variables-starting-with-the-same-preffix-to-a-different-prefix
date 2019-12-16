@@ -10,8 +10,7 @@ Problem: Rename variables (some solutuion limit the number of variables - Richar
 
      respectively
 
-* Richard DeVenezia's has a solution that handles unlimited number of renames?  Bart's second solution was
-  not tested on 2,000 variables? I ran out of time to test?
+  * Richard DeVenezia's and Bart's second solution handle over 17,000 renames(probably more)
   Some solutions fail at 2,000(average 13 byte length col names) and freezes interactive SAS.
   But it can handle 1,000 variables of average length 12
   I do question 1,000 non array elements.  Variables that do not have names like x1-x2000.
